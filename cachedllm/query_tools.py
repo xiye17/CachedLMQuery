@@ -26,10 +26,6 @@ class LLMEngineBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def prompt_to_hashable_str(self, prompt: Any) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def complete_batch(self, prompts: List[Any],
                            max_tokens: int,
                             temperature: float,
@@ -41,7 +37,6 @@ class LLMEngineBase(abc.ABC):
                             **kwargs) -> List[Any]:
         raise NotImplementedError
 
-    @abc.abstractmethod
     def hash_query_request(self, prompt: Any,
                            max_tokens: int,
                             temperature: float,
@@ -51,10 +46,20 @@ class LLMEngineBase(abc.ABC):
                             stop_tokens: Optional[Union[str, List[str]]],
                             echo_prompt: bool,
                             **kwargs) -> str:
+        hash_str = self.model_args_to_str() + self.query_args_to_str(
+            max_tokens, temperature, top_p, n, logprobs, stop_tokens, echo_prompt, **kwargs
+            ) + self.prompt_to_hashable_str(prompt)
+
+        hash_key = self.hash_of_string(hash_str)
+        return hash_key
+
+    @abc.abstractmethod
+    def model_args_to_str(self) -> str:
         raise NotImplementedError
 
-    def _default_query_request_hash_func(self, prompt: Any,
-                           max_tokens: int,
+    @abc.abstractmethod
+    def query_args_to_str(self,
+                          max_tokens: int,
                             temperature: float,
                             top_p: float,
                             n: int,
@@ -62,16 +67,16 @@ class LLMEngineBase(abc.ABC):
                             stop_tokens: Optional[Union[str, List[str]]],
                             echo_prompt: bool,
                             **kwargs) -> str:
-        hash_str = self.query_args_to_str(
-            max_tokens, temperature, top_p, n, logprobs, stop_tokens, echo_prompt, **kwargs
-            ) + self.prompt_to_hashable_str(prompt)
-        hash_key = self.hash_of_string(hash_str)
-        return hash_key
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def prompt_to_hashable_str(self, prompt: Any) -> str:
+        raise NotImplementedError
 
     def hash_of_string(self, s: str) -> str:
         return hashlib.sha1(s.encode('utf-8')).hexdigest()
 
-    def query_args_to_str(self,
+    def _default_query_args_to_str(self,
                           max_tokens: int,
                             temperature: float,
                             top_p: float,

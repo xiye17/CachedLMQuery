@@ -29,10 +29,6 @@ class OpenAICompletionEngine(LLMEngineBase):
         openai.api_key = os.environ["OPENAI_KEY"]
         self.engine_name = engine_name
 
-    def prompt_to_hashable_str(self, prompt: Any) -> str:
-        assert isinstance(prompt, str)
-        return prompt
-
     def _gpt_safe_completion(self, prompts: List[str],
                            max_tokens: int,
                             temperature: float,
@@ -138,8 +134,11 @@ class OpenAICompletionEngine(LLMEngineBase):
                     c["logprobs"] = logprobs
             return {"prompt": {"text": prompt, "logprobs": None}, "completions": choices}
 
-    def hash_query_request(self, prompt: Any,
-                           max_tokens: int,
+    def model_args_to_str(self) -> str:
+        return f"ENGINE={self.engine_name}\n"
+
+    def query_args_to_str(self,
+                          max_tokens: int,
                             temperature: float,
                             top_p: float,
                             n: int,
@@ -147,4 +146,8 @@ class OpenAICompletionEngine(LLMEngineBase):
                             stop_tokens: Optional[Union[str, List[str]]],
                             echo_prompt: bool,
                             **kwargs) -> str:
-        return self._default_query_request_hash_func(prompt, max_tokens, temperature, top_p, n, logprobs, stop_tokens, echo_prompt, **kwargs)
+        return self._default_query_args_to_str(max_tokens, temperature, top_p, n, logprobs, stop_tokens, echo_prompt)
+
+    def prompt_to_hashable_str(self, prompt: Any) -> str:
+        assert isinstance(prompt, str)
+        return prompt
