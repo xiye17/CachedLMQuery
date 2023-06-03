@@ -1,0 +1,1 @@
+HELLO_PROMPT = "Hello, world!"
