@@ -49,7 +49,6 @@ class LLMEngineBase(abc.ABC):
         hash_str = self.model_args_to_str() + self.query_args_to_str(
             max_tokens, temperature, top_p, n, logprobs, stop_tokens, echo_prompt, **kwargs
             ) + self.prompt_to_hashable_str(prompt)
-
         hash_key = self.hash_of_string(hash_str)
         return hash_key
 

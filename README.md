@@ -16,9 +16,9 @@ python example.py
 ```
 
 **Currently Supporting**
-* Query and cache OpenAI vanilla completion engines (e.g., `text-davinci-001`). Also support caching Logprobs of both prompts and completions can be cached for more sophisticated usage.
-* TODO: prompting tools
-* TODO: chat series models and huggingface models
+* Query and cache OpenAI vanilla Completion engines (e.g., `text-davinci-003`). Also support caching logprobs of both prompts and completions for more sophisticated usage.
+* Query and cache OpenAI Chat Completion engines (e.g., `gpt-3.5-turbo`).
+* TODO: huggingface models and prompting tools
 
 **Cache System**
 
