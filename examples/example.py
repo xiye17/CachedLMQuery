@@ -2,7 +2,6 @@ import os
 import openai
 import json
 
-from jinja2 import Environment, BaseLoader
 from cachedllm.query_tools import *
 from cachedllm.prompt_tools import *
 from cachedllm.openai_engine import *
@@ -17,11 +16,9 @@ def dump_json(obj, fname, indent=None):
 
 def example_openai_text():
     data = read_json("demo_data.json")
-    with open("demo_template.tpl") as f:
-        prompt_tpl = f.read()
 
-    prompt_tpl = Environment(loader=BaseLoader).from_string(prompt_tpl)
-    prompts = [prompt_tpl.render(**d) for d in data]
+    prompt_tpl = TextPromptTemplate.from_file("demo_template.tpl")
+    prompts = [prompt_tpl.render(d) for d in data]
 
     query_interface = CachedQueryInterface(
         OpenAICompletionEngine("code-davinci-002"),
@@ -45,11 +42,8 @@ def example_openai_text():
 
 def example_openai_chat():
     data = read_json("demo_data.json")
-    with open("demo_template.tpl") as f:
-        prompt_tpl = f.read()
-
-    prompt_tpl = Environment(loader=BaseLoader).from_string(prompt_tpl)
-    prompts = [prompt_tpl.render(**d) for d in data]
+    prompt_tpl = TextPromptTemplate.from_file("demo_template.tpl")
+    prompts = [prompt_tpl.render(d) for d in data]
 
     query_interface = CachedQueryInterface(
         OpenAIChatEngine("gpt-3.5-turbo"),
