@@ -31,9 +31,9 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
         openai.api_key = os.environ["OPENAI_KEY"]
         self.engine_name = engine_name
         self.mode = mode
-        self.MAX_ATTEMPTS = 5
+        self.MAX_ATTEMPTS = 10
         self.RATE_WAITTIME = 10
-        self.ERROR_WAITTIME = 1
+        self.ERROR_WAITTIME = 10
         self.total_usage = 0
 
     def reset_usage(self):
