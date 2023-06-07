@@ -34,6 +34,13 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
         self.MAX_ATTEMPTS = 5
         self.RATE_WAITTIME = 10
         self.ERROR_WAITTIME = 1
+        self.total_usage = 0
+
+    def reset_usage(self):
+        self.total_usage = 0
+
+    def get_usage(self):
+        return self.total_usage
 
     def model_args_to_str(self) -> str:
         return f"MODEL={self.engine_name}\n"
@@ -84,7 +91,7 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
                     assert len(prompts) == 1
                     response = openai.ChatCompletion.create(messages=prompts[0], **args_dict)
                 response = json.loads(json.dumps(response))
-
+                self.total_usage += response["usage"]["total_tokens"]
                 return response["choices"]
             # wait longer for rate limit errors
             except openai.error.RateLimitError as e:
