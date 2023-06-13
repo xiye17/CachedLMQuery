@@ -23,10 +23,10 @@ class TextPromptTemplate(PromptTemplate):
     def from_file(cls, filename: str) -> "TextPromptTemplate":
         with open(filename, 'r') as f:
             text = f.read()
-        template = Environment(loader=BaseLoader).from_string(text)
+        template = Environment(loader=BaseLoader, keep_trailing_newline=True, trim_blocks=True).from_string(text)
         return cls(template)
 
     @classmethod
     def from_string(cls, text: str) -> "TextPromptTemplate":
-        template = Environment(loader=BaseLoader).from_string(text)
+        template = Environment(loader=BaseLoader, keep_trailing_newline=True, trim_blocks=True).from_string(text)
         return cls(template)

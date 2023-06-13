@@ -138,6 +138,7 @@ class CachedQueryInterface(abc.ABC):
                          # the parameters below controls query speed
                          batch_size: int = 1,
                          # other parameters
+                         disable_tqdm: bool = False,
                          **kwargs) -> List[Any]:
         # bachify for speeding up
         query_pool = []
@@ -150,7 +151,8 @@ class CachedQueryInterface(abc.ABC):
             responses.append(respone)
 
         num_batches = (len(query_pool) + batch_size - 1) // batch_size
-        for batch_idx in tqdm(range(num_batches), total=num_batches, desc="querying"):
+        disable_tqdm = disable_tqdm or num_batches <= 1
+        for batch_idx in tqdm(range(num_batches), total=num_batches, desc="querying", disable=disable_tqdm):
             batch_start = batch_idx * batch_size
             batch_end = min(len(query_pool), batch_start + batch_size)
             batch = query_pool[batch_start:batch_end]
