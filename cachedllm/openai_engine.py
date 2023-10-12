@@ -104,6 +104,9 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
                 last_exc = e
                 time.sleep(self.ERROR_WAITTIME)
 
+        if isinstance(last_exc, openai.error.RateLimitError):
+            raise RuntimeError("Consistently hit rate limit error")
+
         # make fake choices
         if self.mode == OpenAIBaseEngine.OpenAIMode.COMPLETION:
             fake_choices = [
