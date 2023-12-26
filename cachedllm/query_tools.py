@@ -119,13 +119,38 @@ class SqliteCache(Cachebase):
 # class FileCache(Cachebase): TODO: FileSystem Based Cache for storing large files
 
 
-class CachedQueryInterface(abc.ABC):
+class CachedQueryInterface:
     def __init__(self, engine: LLMEngineBase, cache_dir: str):
         self.engine = engine
         self.cache_dir = cache_dir
         self.cache = SqliteCache(cache_dir)
 
-    def complete_prompts(self,
+    def complete(self,
+                 prompt: Any,
+                 max_tokens: int = 0,
+                 temperature: float = 0.0,
+                 top_p: float = 1.0,
+                 n: int = 1,
+                 logprobs: Optional[int] = None,
+                 stop_tokens: Optional[Union[str, List[str]]] = None,
+                 echo_prompt: bool = False,
+                 sample_uid: Optional[Union[str, int]] = None,
+                 **kwargs) -> Any:
+        """Complete a single prompt, with caching. Allows re-sampling with the same setup if sample_uid is provided."""
+        hash_key = self.engine.hash_query_request(prompt, max_tokens=max_tokens, temperature=temperature, top_p=top_p, n=n,
+                                                  logprobs=logprobs, stop_tokens=stop_tokens, echo_prompt=echo_prompt, **kwargs)
+        if sample_uid is not None:
+            hash_key += f"_UID:{sample_uid}"
+        response = self.cache.lookup(hash_key)
+        if response is not None:
+            return response
+
+        response = self.engine.complete_batch([prompt], max_tokens=max_tokens, temperature=temperature, top_p=top_p, n=n,
+                                                logprobs=logprobs, stop_tokens=stop_tokens, echo_prompt=echo_prompt, **kwargs)[0]
+        self.cache.write(hash_key, response)
+        return response
+
+    def complete_batch(self,
                          # the parameters above controls the query results, hence controlling the information to be cached
                          prompts: List[Any],
                          max_tokens: int = 0,
@@ -140,6 +165,7 @@ class CachedQueryInterface(abc.ABC):
                          # other parameters
                          disable_tqdm: bool = False,
                          **kwargs) -> List[Any]:
+        """Complete a batch of prompts, with caching."""
         # bachify for speeding up
         query_pool = []
         responses = []

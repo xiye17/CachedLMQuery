@@ -28,7 +28,16 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
         CHAT = "chat"
 
     def __init__(self, engine_name: str, mode: OpenAIMode):
-        openai.api_key = os.environ["OPENAI_KEY"]
+        if os.environ.get("OPENAI_ORG") is not None:
+            client = openai.OpenAI(
+                api_key= os.environ["OPENAI_KEY"],
+                organization=os.environ["OPENAI_ORG"],
+            )
+        else:
+            client = openai.OpenAI(
+                api_key=os.environ["OPENAI_KEY"],
+            )
+        self.cliet = client
         self.engine_name = engine_name
         self.mode = mode
         self.MAX_ATTEMPTS = 10
@@ -83,28 +92,29 @@ class OpenAIBaseEngine(LLMEngineBase, abc.ABC):
         if echo_prompt is False: args_dict.pop("echo")
 
         last_exc = None
-        for i in range(self.MAX_ATTEMPTS):
+        for _ in range(self.MAX_ATTEMPTS):
             try:
                 if self.mode == OpenAIBaseEngine.OpenAIMode.COMPLETION:
-                    response = openai.Completion.create(prompt=prompts, **args_dict)
+                    response = self.cliet.completions.create(prompt=prompts, **args_dict)
                 elif self.mode == OpenAIBaseEngine.OpenAIMode.CHAT:
                     assert len(prompts) == 1
-                    response = openai.ChatCompletion.create(messages=prompts[0], **args_dict)
-                response = json.loads(json.dumps(response))
+                    response = self.cliet.chat.completions.create(messages=prompts[0], **args_dict)
+                response = json.loads(response.model_dump_json())
                 self.total_usage += response["usage"]["total_tokens"]
                 return response["choices"]
             # wait longer for rate limit errors
-            except openai.error.RateLimitError as e:
+            # except openai.error.RateLimitError as e:
+            except openai.RateLimitError as e:
                 last_exc = e
                 time.sleep(self.RATE_WAITTIME)
             # invalid request errors are fatal
-            except openai.error.InvalidRequestError as e:
+            except openai.BadRequestError as e:
                 raise e
-            except openai.error.OpenAIError as e:
+            except openai.OpenAIError as e:
                 last_exc = e
                 time.sleep(self.ERROR_WAITTIME)
 
-        if isinstance(last_exc, openai.error.RateLimitError):
+        if isinstance(last_exc, openai.RateLimitError):
             raise RuntimeError("Consistently hit rate limit error")
 
         # make fake choices

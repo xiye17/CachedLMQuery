@@ -25,7 +25,7 @@ def example_openai_text():
         cache_dir="gsm.sqlite",
     )
 
-    responses = query_interface.complete_prompts(
+    responses = query_interface.complete_batch(
         prompts,
         max_tokens=160,
         temperature=0.0,
@@ -60,9 +60,9 @@ def example_openai_chat():
         for p in prompts
     ]
 
-    responses = query_interface.complete_prompts(
+    responses = query_interface.complete_batch(
         messages,
-        max_tokens=320,
+        max_tokens=128,
         temperature=0.5,
         n=1,
         logprobs=None,
@@ -70,9 +70,60 @@ def example_openai_chat():
     )
 
     for r in responses:
-        print(json.dumps(r, indent=2))
+        print(json.dumps(r["completions"][0]["message"]["content"], indent=2))
 
+def example_seq_chat():
+    data = read_json("demo_data.json")
+    prompt_tpl = TextPromptTemplate.from_file("demo_template.tpl")
+    prompts = [prompt_tpl.render(d) for d in data]
 
-example_openai_text()
+    query_interface = CachedQueryInterface(
+        OpenAIChatEngine("gpt-3.5-turbo"),
+        cache_dir="gsm.sqlite",
+    )
+
+    system_message = "You are a helpful assistant that answers the math questions. Example input-output will be provided."
+    messages = [
+        [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": p}
+        ]
+        for p in prompts
+    ]
+
+    responses = []
+    print("Testing single prompt for 5 times")
+    for _ in range(5):
+        resp = query_interface.complete(
+            messages[0],
+            max_tokens=128,
+            temperature=0.5,
+            n=1,
+            logprobs=None,
+            echo_prompt=False,
+        )
+        responses.append(resp)
+
+    print("You should see 5 identical responses:")
+    for r in responses:
+        print(json.dumps(r["completions"][0]["message"]["content"], indent=2))
+
+    responses = []
+    for i in range(5):
+        resp = query_interface.complete(
+            messages[0],
+            max_tokens=128,
+            temperature=0.5,
+            n=1,
+            logprobs=None,
+            echo_prompt=False,
+            sample_uid=i,
+        )
+        responses.append(resp)
+    print("You should see 5 different responses:")
+    for r in responses:
+        print(json.dumps(r["completions"][0]["message"]["content"], indent=2))
+
+# example_openai_text()
+example_seq_chat()
 example_openai_chat()
-
