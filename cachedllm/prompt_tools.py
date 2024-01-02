@@ -36,6 +36,11 @@ class Jinja2PromptTemplate(ABC):
         template = Environment(loader=BaseLoader, keep_trailing_newline=True, trim_blocks=True).from_string(text)
         return cls(template)
 
+    @staticmethod
+    def pretty_print(prompt: Any) -> str:
+        """Pretty print messages."""
+        raise NotImplementedError
+
 class TextPromptTemplate(Jinja2PromptTemplate):
     """Template for text prompts."""
 
@@ -44,6 +49,10 @@ class TextPromptTemplate(Jinja2PromptTemplate):
             return self.template.render(**data, **kwargs)
         return self.template.render(**kwargs)
 
+    @staticmethod
+    def pretty_print(prompt: str) -> str:
+        """Pretty print messages."""
+        return prompt
 
 class OAIChatPromptTemplate(Jinja2PromptTemplate):
     """Template for messages prompts."""
